@@ -6,6 +6,7 @@ use std::str::Split;
 pub enum ErrMessages {
     MissingBulkString,
     EmptyInput,
+    UnknownInput,
 }
 
 impl ErrMessages {
@@ -13,6 +14,7 @@ impl ErrMessages {
         match self {
             ErrMessages::MissingBulkString => "Bulk string cannot be empty or null!",
             ErrMessages::EmptyInput => "Input cannot be empty!",
+            ErrMessages::UnknownInput => "Unknown input!",
         }
     }
 }
@@ -44,6 +46,22 @@ fn read_bulk_string(serialized_input: &str) -> (String, String) {
     (bulk_string_value, remaining_tail)
 }
 
+pub fn read_array(data: &str) -> (Vec<String>, String) {
+    let (arr_length, tail) = split_data(data);
+    let count = arr_length.parse::<usize>().unwrap_or_default();
+
+    let mut remaining_data = tail.to_string(); // Convert to String to make it mutable
+    let mut items: Vec<String> = Vec::new();
+
+    for _ in 0..count {
+        let (parsed_item, new_tail) = parse_resp(&remaining_data).unwrap();
+        remaining_data = new_tail;
+        items.push(parsed_item);
+    }
+
+    (items, String::new())
+}
+
 /// Simple string should receieve this example text\
 /// **"+OK"**\
 /// and return\
@@ -53,7 +71,7 @@ fn read_simple_string(serialized_input: &str) -> (String, String) {
     split_data(serialized_input)
 }
 
-pub fn parse_resp(serialized_input: &str) -> Result<(char, String), ErrMessages> {
+pub fn parse_resp(serialized_input: &str) -> Result<(String, String), ErrMessages> {
     if serialized_input == "$-1\r\n" {
         return Err(ErrMessages::MissingBulkString);
     }
@@ -64,7 +82,12 @@ pub fn parse_resp(serialized_input: &str) -> Result<(char, String), ErrMessages>
         serialized_input.chars().next().unwrap_or_default(),
         &serialized_input[1..],
     );
-    Ok((first_char, tail.to_string()))
+
+    match first_char {
+        '+' | '-' => Ok(read_simple_string(serialized_input)),
+        '$' => Ok(read_bulk_string(serialized_input)),
+        _ => Err(ErrMessages::UnknownInput),
+    }
 }
 
 #[cfg(test)]
@@ -94,11 +117,6 @@ mod tests {
             read_simple_string(dollar_stripped_input).0,
             "OK".to_string()
         );
-    }
-
-    #[test]
-    fn should_separate_first_char_from_input_string() {
-        assert_eq!(parse_resp("+OK\r\n").unwrap(), ('+', "OK\r\n".to_string()));
     }
 
     #[test]
