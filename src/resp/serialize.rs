@@ -6,6 +6,7 @@ use super::resp_parsing_utils::append_crlf;
 pub enum InputVariants {
     NumberVariant(i32),
     StringVariant(String),
+    ErrorVariant(String),
     StringVariantArr(Vec<String>),
     Nullish,
 }
@@ -16,7 +17,7 @@ pub fn serialize(input: InputVariants) -> String {
             append_crlf(concat_string!(":", number.to_string()))
         }
         InputVariants::StringVariant(string) => {
-            if string.starts_with("+") || string.starts_with("-") {
+            if string.starts_with('+') {
                 append_crlf(string)
             } else {
                 concat_string!(
@@ -25,6 +26,7 @@ pub fn serialize(input: InputVariants) -> String {
                 )
             }
         }
+        InputVariants::ErrorVariant(string) => append_crlf(string),
         InputVariants::StringVariantArr(string_arr) => {
             let serialized_items: Vec<String> = string_arr
                 .iter()
@@ -38,7 +40,7 @@ pub fn serialize(input: InputVariants) -> String {
                 serialized_items.join("")
             )
         }
-        _ => append_crlf("$-1".to_string()),
+        _ => append_crlf("$-1"),
     }
 }
 

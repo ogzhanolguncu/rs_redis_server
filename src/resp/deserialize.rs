@@ -61,7 +61,13 @@ mod tests {
 
     #[test]
     fn todoo() {
-        assert_eq!(deserialize("+PING"), Ok(RespResponse::TupleVariant("PING".to_string(), "".to_string())))
+        assert_eq!(
+            deserialize("+PING"),
+            Ok(RespResponse::TupleVariant(
+                "PING".to_string(),
+                "".to_string()
+            ))
+        )
     }
 
     #[test]

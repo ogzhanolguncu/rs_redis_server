@@ -8,25 +8,33 @@ pub fn handle_command(human_readable: std::borrow::Cow<'_, str>) -> String {
     if let Ok(deserialized_command) = command {
         match deserialized_command {
             RespResponse::VecVariant(commands, _) => {
-                let first_element: &String = commands.first().unwrap();
-                let args = &commands[1..];
+                if let Some(command) = commands.first().map(|s| s.to_lowercase()) {
+                    let args = &commands[1..];
 
-                match first_element.to_lowercase().as_str() {
-                    "command" => return serialize(InputVariants::Nullish),
-                    "ping" => return serialize(InputVariants::StringVariant("+pong".to_string())),
-                    "echo" => {
-                        if args.len() != 1 {
-                            err_if_num_of_args_wrong("echo")
-                        } else {
-                            serialize(InputVariants::StringVariant(args[0].clone()))
-                        }
+                    match command.as_str() {
+                        "command" => serialize(InputVariants::Nullish),
+                        "ping" => serialize(InputVariants::StringVariant("+pong".to_string())),
+                        "echo" => match args.len() {
+                            1 => serialize(InputVariants::StringVariant(args[0].clone())),
+                            _ => err_if_num_of_args_wrong("echo"),
+                        },
+                        unknown_command => serialize(InputVariants::StringVariant(concat_string!(
+                            "-ERR command not supported ",
+                            unknown_command
+                        ))),
                     }
-                    _ => todo!(),
+                } else {
+                    serialize_error("-ERR Commands array is empty")
                 }
             }
-            _ => todo!(),
+            _ => serialize_error("-ERR Unsupported RESP type"),
         }
     } else {
-        todo!()
+        serialize_error("-ERR Failed to deserialize")
     }
+}
+
+fn serialize_error(message: &str) -> String {
+    println!("{}", message);
+    serialize(InputVariants::ErrorVariant(message.to_string()))
 }

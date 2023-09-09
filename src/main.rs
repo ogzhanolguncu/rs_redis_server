@@ -9,7 +9,6 @@ use connection_manager::client_handler::handle_stream;
 use resp::deserialize::deserialize;
 use resp::serialize::serialize;
 
-
 const ADDR: std::net::Ipv4Addr = std::net::Ipv4Addr::new(127, 0, 0, 1);
 const PORT: u16 = 6379; //Redis PORT
 
@@ -26,6 +25,3 @@ fn main() {
         }
     }
 }
-
-
-
