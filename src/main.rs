@@ -5,6 +5,8 @@ mod store;
 #[macro_use(concat_string)]
 extern crate concat_string;
 use std::net::{SocketAddrV4, TcpListener};
+use std::sync::Arc;
+use std::thread;
 
 use connection_manager::client_handler::handle_stream;
 use resp::deserialize::deserialize;
@@ -16,13 +18,15 @@ const PORT: u16 = 6379; //Redis PORT
 
 fn main() {
     let listener = TcpListener::bind(SocketAddrV4::new(ADDR, PORT)).unwrap();
-    let cache = Cache::new();
+    let cache = Arc::new(Cache::new());
 
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
                 println!("New connection: {}", stream.peer_addr().unwrap());
-                handle_stream(stream, &cache)
+
+                let cache_clone = cache.clone();
+                thread::spawn(move || handle_stream(stream, &cache_clone));
             }
             Err(err) => println!("Connection failed due to {:?}", err),
         }
