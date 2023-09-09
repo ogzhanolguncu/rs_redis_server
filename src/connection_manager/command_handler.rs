@@ -1,6 +1,9 @@
 use std::borrow::Cow;
 
-use super::{utils::{throw_err_if_num_of_args_wrong, serialize_error}, commands::{handle_ping, handle_echo, ignore_command}};
+use super::{
+    commands::{handle_echo, handle_ping, ignore_command},
+    utils::serialize_error,
+};
 use crate::{
     deserialize, resp::deserialize::RespResponse, resp::serialize::InputVariants, serialize,
 };
@@ -36,9 +39,10 @@ pub fn handle_command(human_readable: Cow<'_, str>) -> String {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use crate::connection_manager::utils::throw_err_if_num_of_args_wrong;
+
     use super::*;
 
     #[test]
