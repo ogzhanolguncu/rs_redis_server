@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use super::utils::throw_err_if_num_of_args_wrong;
+use super::{utils::{throw_err_if_num_of_args_wrong, serialize_error}, commands::{handle_ping, handle_echo, ignore_command}};
 use crate::{
     deserialize, resp::deserialize::RespResponse, resp::serialize::InputVariants, serialize,
 };
@@ -15,12 +15,9 @@ pub fn handle_command(human_readable: Cow<'_, str>) -> String {
                     let args = &commands[1..];
 
                     match command.as_str() {
-                        "command" => serialize(InputVariants::Nullish),
-                        "ping" => serialize(InputVariants::StringVariant("pong".to_string())),
-                        "echo" => match args.len() {
-                            1 => serialize(InputVariants::StringVariant(args[0].clone())),
-                            _ => throw_err_if_num_of_args_wrong("echo"),
-                        },
+                        "command" => ignore_command(),
+                        "ping" => handle_ping(),
+                        "echo" => handle_echo(args),
                         unknown_command => serialize(InputVariants::StringVariant(concat_string!(
                             "-ERR command not supported ",
                             unknown_command
@@ -39,10 +36,6 @@ pub fn handle_command(human_readable: Cow<'_, str>) -> String {
     }
 }
 
-fn serialize_error(message: &str) -> String {
-    println!("{}", message);
-    serialize(InputVariants::ErrorVariant(message.to_string()))
-}
 
 #[cfg(test)]
 mod tests {

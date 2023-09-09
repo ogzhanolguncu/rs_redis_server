@@ -7,3 +7,9 @@ pub fn throw_err_if_num_of_args_wrong(variant: &str) -> String {
         " command"
     )))
 }
+
+
+pub fn serialize_error(message: &str) -> String {
+    println!("{}", message);
+    serialize(InputVariants::ErrorVariant(message.to_string()))
+}
