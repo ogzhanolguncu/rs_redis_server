@@ -3,9 +3,11 @@ use std::{
     net::{Shutdown, TcpStream},
 };
 
+use crate::store::db::Cache;
+
 use super::command_handler::handle_command;
 
-pub fn handle_stream(mut stream: TcpStream) {
+pub fn handle_stream(mut stream: TcpStream, cache: &Cache) {
     let mut data = [0_u8; 60];
     loop {
         match stream.read(&mut data) {
@@ -15,7 +17,7 @@ pub fn handle_stream(mut stream: TcpStream) {
                     break;
                 } else {
                     let human_readable = String::from_utf8_lossy(&data[0..size]);
-                    let serialized_response = handle_command(human_readable);
+                    let serialized_response = handle_command(human_readable, cache);
                     match stream.write(serialized_response.as_bytes()) {
                         Ok(written) => {
                             if written < serialized_response.len() {
