@@ -9,7 +9,7 @@ pub enum RespResponse {
     VecVariant(Vec<String>, String),
 }
 
-pub fn parse_resp(serialized_input: &str) -> Result<RespResponse, ErrMessages> {
+pub fn deserialize(serialized_input: &str) -> Result<RespResponse, ErrMessages> {
     if serialized_input == "$-1\r\n" {
         return Err(ErrMessages::MissingBulkString);
     }
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn should_deserialize_with_parse_resp() {
         assert_eq!(
-            parse_resp("$7\r\nCOMMAND").unwrap(),
+            deserialize("$7\r\nCOMMAND").unwrap(),
             RespResponse::TupleVariant("COMMAND".to_string(), "".to_string())
         );
     }
@@ -50,19 +50,24 @@ mod tests {
     #[test]
     fn should_return_error_when_empty_bulk_passed() {
         assert_eq!(
-            parse_resp("$-1\r\n").unwrap_err(),
+            deserialize("$-1\r\n").unwrap_err(),
             ErrMessages::MissingBulkString
         );
     }
     #[test]
     fn should_return_error_when_empty_input_passed() {
-        assert_eq!(parse_resp("").unwrap_err(), ErrMessages::EmptyInput)
+        assert_eq!(deserialize("").unwrap_err(), ErrMessages::EmptyInput)
+    }
+
+    #[test]
+    fn todoo() {
+        assert_eq!(deserialize("+PING"), Ok(RespResponse::TupleVariant("PING".to_string(), "".to_string())))
     }
 
     #[test]
     fn should_deserialize_array() {
         assert_eq!(
-            parse_resp("*2\r\n$7\r\nCOMMAND\r\n$4\r\nDOCS\r\n").unwrap(),
+            deserialize("*2\r\n$7\r\nCOMMAND\r\n$4\r\nDOCS\r\n").unwrap(),
             RespResponse::VecVariant(
                 vec!["COMMAND".to_string(), "DOCS".to_string()],
                 String::new()

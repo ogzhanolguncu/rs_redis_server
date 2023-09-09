@@ -1,7 +1,7 @@
 use std::str::Split;
 
 use super::{
-    deserialize::{parse_resp, RespResponse},
+    deserialize::{deserialize, RespResponse},
     error::ErrMessages,
 };
 
@@ -22,7 +22,7 @@ pub fn read_bulk_string(serialized_input: &str) -> Result<(String, String), ErrM
         .map_err(|err| ErrMessages::ParseError(err.to_string()))?;
 
     let bulk_string_value: String = value.chars().take(parsed_string_length).collect();
-    let remaining_tail: String = value.chars().skip(parsed_string_length + 2).collect(); // Skip parsed_string_length + 2 to also skip the trailing "\r\n"
+    let remaining_tail: String = value.chars().skip(parsed_string_length + 2).collect();
     Ok((bulk_string_value, remaining_tail))
 }
 
@@ -35,7 +35,7 @@ pub fn read_array(data: &str) -> Result<(Vec<String>, String), ErrMessages> {
     let mut items: Vec<String> = Vec::new();
 
     for _ in 0..count {
-        let parsed_item = parse_resp(&remaining_data)?;
+        let parsed_item = deserialize(&remaining_data)?;
         match parsed_item {
             RespResponse::TupleVariant(head, tail) => {
                 remaining_data = tail;
