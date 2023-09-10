@@ -15,7 +15,7 @@ impl Cache {
         let expirations = Arc::new(RwLock::new(HashMap::new()));
         let cache = Self { data, expirations };
 
-        // Spawns a thread that runs every sec to check expirations hashmap to control if there are any expired key-val pairs.
+        // Spawns a thread that runs every sec to check expirations hashmap object to control if there are any expired key-val pairs.
         let data_clone = cache.data.clone();
         let expirations_clone = cache.expirations.clone();
         thread::spawn(move || loop {
@@ -32,7 +32,7 @@ impl Cache {
         cache
     }
 
-    pub fn set_with_seconds(&self, key: String, value: String, secs: Duration) {
+    pub fn set_with_expiration(&self, key: String, value: String, secs: Duration) {
         let mut data = self.data.write().unwrap();
         let mut expirations = self.expirations.write().unwrap();
         data.insert(key.clone(), value);

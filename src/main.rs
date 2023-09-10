@@ -10,7 +10,6 @@ use std::thread;
 
 use connection_manager::client_handler::handle_stream;
 use resp::deserialize::deserialize;
-use resp::serialize::serialize;
 use store::db::Cache;
 
 const ADDR: std::net::Ipv4Addr = std::net::Ipv4Addr::new(127, 0, 0, 1);

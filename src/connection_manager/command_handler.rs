@@ -4,10 +4,7 @@ use super::{
     commands::{handle_echo, handle_get, handle_ping, handle_set, ignore_command},
     utils::serialize_error,
 };
-use crate::{
-    deserialize, resp::deserialize::RespResponse, resp::serialize::InputVariants, serialize,
-    store::db::Cache,
-};
+use crate::{deserialize, resp::deserialize::RespResponse, store::db::Cache};
 
 pub fn handle_command(human_readable: Cow<'_, str>, cache: &Cache) -> String {
     let command = deserialize(&human_readable);
@@ -24,27 +21,30 @@ pub fn handle_command(human_readable: Cow<'_, str>, cache: &Cache) -> String {
                         "echo" => handle_echo(args),
                         "set" => handle_set(args, cache),
                         "get" => handle_get(args, cache),
-                        unknown_command => serialize(InputVariants::StringVariant(concat_string!(
-                            "-ERR command not supported ",
-                            unknown_command
-                        ))),
+                        unknown_command => {
+                            let message = "-unknown command '".to_owned() + unknown_command + "'";
+                            serialize_error(message.as_str())
+                        }
                     }
                 } else {
-                    serialize_error("-ERR Commands array is empty")
+                    serialize_error("-commands array is empty")
                 }
             }
-            _ => serialize_error("-ERR Unsupported RESP type"),
+            _ => serialize_error("-unsupported RESP type"),
         },
         Err(err) => {
             println!("{}", err);
-            serialize_error("-ERR Failed to deserialize")
+            serialize_error("-failed to deserialize")
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::connection_manager::utils::throw_err_if_num_of_args_wrong;
+    use crate::{
+        connection_manager::utils::throw_err_if_num_of_args_wrong,
+        resp::serialize::{serialize, InputVariants},
+    };
 
     use super::*;
 
@@ -75,7 +75,7 @@ mod tests {
     fn should_return_error_when_fail_to_deserialize() {
         let input = Cow::Borrowed("*1\r\nSILLY");
         assert_eq!(
-            serialize_error("-ERR Failed to deserialize"),
+            serialize_error("-failed to deserialize"),
             handle_command(input, &Cache::new())
         );
     }
@@ -84,10 +84,7 @@ mod tests {
     fn should_return_error_when_unknown_command() {
         let input = Cow::Borrowed("*2\r\n$5\r\nECHOO\r\n$2\r\nRT\r\n");
         assert_eq!(
-            serialize(InputVariants::StringVariant(concat_string!(
-                "-ERR command not supported ",
-                "echoo"
-            ))),
+            serialize_error(format!("-unknown command '{}'", "echoo").as_str()),
             handle_command(input, &Cache::new())
         );
     }
