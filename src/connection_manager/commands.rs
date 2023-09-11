@@ -104,3 +104,45 @@ pub fn handle_del(args: &[String], cache: &Cache) -> String {
         Err(_) => serialize_error("-something went wrong during del"),
     }
 }
+
+pub fn handle_incr(args: &[String], cache: &Cache) -> String {
+    if let Some(key) = args.get(0) {
+        let existing_value = cache.get(key);
+
+        if let Some(value_in_cache) = existing_value {
+            match value_in_cache.parse::<i32>().map(|v| v + 1) {
+                Ok(new_value) => {
+                    cache.set(key.clone(), new_value.to_string());
+                    serialize(InputVariants::NumberVariant(new_value))
+                }
+                Err(_) => serialize_error("-could not parse stored number"),
+            }
+        } else {
+            cache.set(key.clone(), 1.to_string());
+            serialize(InputVariants::NumberVariant(1))
+        }
+    } else {
+        serialize_error("-invalid INCR arguments")
+    }
+}
+
+pub fn handle_decr(args: &[String], cache: &Cache) -> String {
+    if let Some(key) = args.get(0) {
+        let existing_value = cache.get(key);
+
+        if let Some(value_in_cache) = existing_value {
+            match value_in_cache.parse::<i32>().map(|v| v - 1) {
+                Ok(new_value) => {
+                    cache.set(key.clone(), new_value.to_string());
+                    serialize(InputVariants::NumberVariant(new_value))
+                }
+                Err(_) => serialize_error("-could not parse stored number"),
+            }
+        } else {
+            cache.set(key.clone(), (-1).to_string());
+            serialize(InputVariants::NumberVariant(-1))
+        }
+    } else {
+        serialize_error("-invalid INCR arguments")
+    }
+}
