@@ -60,4 +60,16 @@ mod tests {
         cache.set(String::from("name"), String::from("The Wizard of Oz"));
         assert_eq!("The Wizard of Oz", cache.get("name").unwrap());
     }
+
+    #[test]
+    fn should_set_and_get_expiration() {
+        let cache = Cache::new();
+        cache.set_with_expiration(
+            String::from("name"),
+            String::from("The Wizard of Oz"),
+            Duration::from_secs(3),
+        );
+        thread::sleep(Duration::from_secs(4));
+        assert!(cache.get("name").is_none());
+    }
 }

@@ -41,6 +41,8 @@ pub fn handle_command(human_readable: Cow<'_, str>, cache: &Cache) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::{thread, time::Duration};
+
     use crate::{
         connection_manager::utils::throw_err_if_num_of_args_wrong,
         resp::serialize::{serialize, InputVariants},
@@ -108,6 +110,46 @@ mod tests {
         assert_eq!(
             serialize(InputVariants::StringVariant("Wizard of Oz".to_string())),
             handle_command(input, &cache)
+        );
+    }
+
+    #[test]
+    fn should_set_with_expiration_and_retrive_expired() {
+        let cache = Cache::new();
+        let set_input = Cow::Borrowed(
+            "*5\r\n$3\r\nset\r\n$4\r\nname\r\n$12\r\nWizard of Oz\r\n$2\r\nEX\r\n$1\r\n3",
+        );
+        let get_input = Cow::Borrowed("*2\r\n$3\r\nget\r\n$4\r\nname\r\n");
+        handle_command(set_input, &cache);
+        thread::sleep(Duration::from_secs(4));
+
+        assert_eq!(
+            serialize(InputVariants::StringVariant("+(nil)".to_string())),
+            handle_command(get_input, &cache)
+        );
+    }
+
+    #[test]
+    fn should_set_with_unknown_expiration_variant() {
+        let cache = Cache::new();
+        let set_input = Cow::Borrowed(
+            "*5\r\n$3\r\nset\r\n$4\r\nname\r\n$12\r\nWizard of Oz\r\n$6\r\nEXATAT\r\n$1\r\n3",
+        );
+        assert_eq!(
+            serialize_error("-unknown SET variant"),
+            handle_command(set_input, &cache)
+        );
+    }
+
+    #[test]
+    fn should_set_with_unparseable_value() {
+        let cache = Cache::new();
+        let set_input = Cow::Borrowed(
+            "*5\r\n$3\r\nset\r\n$4\r\nname\r\n$12\r\nWizard of Oz\r\n$6\r\nEXATAT\r\n$3\r\nAAA",
+        );
+        assert_eq!(
+            serialize_error("-invalid SET expiration"),
+            handle_command(set_input, &cache)
         );
     }
 }

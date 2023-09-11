@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::{
     resp::serialize::{serialize, InputVariants},
@@ -30,7 +30,7 @@ pub fn handle_get(args: &[String], cache: &Cache) -> String {
             serialize(InputVariants::StringVariant("+(nil)".to_string()))
         }
     } else {
-        serialize_error("-ERR Invalid GET arguments")
+        serialize_error("-invalid GET arguments")
     }
 }
 
@@ -45,27 +45,38 @@ pub fn handle_set(args: &[String], cache: &Cache) -> String {
             match exp_variant.clone().as_str() {
                 "EX" => handle_set_with_expiration(args, cache, Duration::from_secs(time)),
                 "PX" => handle_set_with_expiration(args, cache, Duration::from_millis(time)),
-                // "EXAT" => {
-                //     let now = SystemTime::now();
-                //     let now_unix = now
-                //         .duration_since(UNIX_EPOCH)
-                //         .expect("Time went backwards")
-                //         .as_secs();
-                //     let duration_until_expiration = Duration::from_secs(time - now_unix);
-
-                // }
-                _ => todo!(),
+                "EXAT" => {
+                    let now = SystemTime::now();
+                    let now_unix = now
+                        .duration_since(UNIX_EPOCH)
+                        .expect("Impossibru!")
+                        .as_secs();
+                    handle_set_with_expiration(args, cache, Duration::from_secs(time - now_unix))
+                }
+                "PXAT" => {
+                    let now = SystemTime::now();
+                    let now_unix = now
+                        .duration_since(UNIX_EPOCH)
+                        .expect("Impossibru!")
+                        .as_millis() as u64;
+                    handle_set_with_expiration(args, cache, Duration::from_millis(time - now_unix))
+                }
+                _ => serialize_error("-unknown SET variant"),
             }
         } else {
-            serialize_error("-ERR Invalid SET expiration")
+            serialize_error("-invalid SET expiration")
         }
     } else {
-        if let (Some(key), Some(value)) = (args.get(0), args.get(1)) {
-            cache.set(key.clone(), value.clone());
-            serialize(InputVariants::StringVariant("+OK".to_string()))
-        } else {
-            serialize_error("-ERR Invalid SET arguments")
-        }
+        handle_set_without_expiration(args, cache)
+    }
+}
+
+fn handle_set_without_expiration(args: &[String], cache: &Cache) -> String {
+    if let (Some(key), Some(value)) = (args.get(0), args.get(1)) {
+        cache.set(key.clone(), value.clone());
+        serialize(InputVariants::StringVariant("+OK".to_string()))
+    } else {
+        serialize_error("-invalid SET arguments")
     }
 }
 
@@ -74,6 +85,6 @@ fn handle_set_with_expiration(args: &[String], cache: &Cache, time: Duration) ->
         cache.set_with_expiration(key.clone(), value.clone(), time);
         serialize(InputVariants::StringVariant("+OK".to_string()))
     } else {
-        serialize_error("-ERR Invalid SET arguments")
+        serialize_error("-invalid SET arguments")
     }
 }
