@@ -88,3 +88,11 @@ fn handle_set_with_expiration(args: &[String], cache: &Cache, time: Duration) ->
         serialize_error("-invalid SET arguments")
     }
 }
+
+pub fn handle_exists(args: &[String], cache: &Cache) -> String {
+    let count = args.iter().filter(|key| cache.exists(key)).count();
+    match i32::try_from(count) {
+        Ok(count_i32) => serialize(InputVariants::NumberVariant(count_i32)),
+        Err(_) => serialize_error("-something went wrong during exists"),
+    }
+}

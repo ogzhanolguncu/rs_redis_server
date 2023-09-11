@@ -48,6 +48,11 @@ impl Cache {
         let data = self.data.read().unwrap();
         data.get(key).cloned()
     }
+
+    pub fn exists(&self, key: &str) -> bool {
+        let data = self.data.read().unwrap();
+        data.contains_key(key)
+    }
 }
 
 #[cfg(test)]
