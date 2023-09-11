@@ -53,6 +53,11 @@ impl Cache {
         let data = self.data.read().unwrap();
         data.contains_key(key)
     }
+
+    pub fn del(&self, key: &str) -> Option<String> {
+        let mut data = self.data.write().unwrap();
+        data.remove(key)
+    }
 }
 
 #[cfg(test)]

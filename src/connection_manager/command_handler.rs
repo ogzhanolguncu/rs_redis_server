@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use super::{
-    commands::{handle_echo, handle_exists, handle_get, handle_ping, handle_set, ignore_command},
+    commands::{handle_echo, handle_exists, handle_get, handle_ping, handle_set, ignore_command, handle_del},
     utils::serialize_error,
 };
 use crate::{deserialize, resp::deserialize::RespResponse, store::db::Cache};
@@ -22,6 +22,7 @@ pub fn handle_command(human_readable: Cow<'_, str>, cache: &Cache) -> String {
                         "set" => handle_set(args, cache),
                         "get" => handle_get(args, cache),
                         "exists" => handle_exists(args, cache),
+                        "del" => handle_del(args, cache),
                         unknown_command => {
                             let message = "-unknown command '".to_owned() + unknown_command + "'";
                             serialize_error(message.as_str())
@@ -168,6 +169,23 @@ mod tests {
     fn should_return_zero_if_not_exists() {
         let cache = Cache::new();
         let input = Cow::Borrowed("*2\r\n$6\r\nexists\r\n$4\r\nname\r\n");
+        assert_eq!(serialize(InputVariants::NumberVariant(0)), handle_command(input, &cache))
+    }
+
+     #[test]
+    fn should_del_values() {
+        let cache = Cache::new();
+        cache.set("name".to_string(), "name_val".to_string());
+        cache.set("name1".to_string(), "name_val_1".to_string());
+        cache.set("name2".to_string(), "name_val_2".to_string());
+        let input = Cow::Borrowed("*4\r\n$3\r\ndel\r\n$4\r\nname\r\n$5\r\nname1\r\n$5\r\nname2\r\n");
+        assert_eq!(serialize(InputVariants::NumberVariant(3)), handle_command(input, &cache))
+    }
+
+    #[test]
+    fn should_return_zero_if_cant_remove() {
+        let cache = Cache::new();
+        let input = Cow::Borrowed("*2\r\n$3\r\ndel\r\n$4\r\nname\r\n");
         assert_eq!(serialize(InputVariants::NumberVariant(0)), handle_command(input, &cache))
     }
 }

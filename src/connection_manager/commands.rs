@@ -96,3 +96,11 @@ pub fn handle_exists(args: &[String], cache: &Cache) -> String {
         Err(_) => serialize_error("-something went wrong during exists"),
     }
 }
+
+pub fn handle_del(args: &[String], cache: &Cache) -> String {
+    let count = args.iter().filter(|key| cache.del(key).is_some()).count();
+    match i32::try_from(count) {
+        Ok(count_i32) => serialize(InputVariants::NumberVariant(count_i32)),
+        Err(_) => serialize_error("-something went wrong during del"),
+    }
+}
