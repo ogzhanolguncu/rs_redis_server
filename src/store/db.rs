@@ -15,20 +15,28 @@ impl Cache {
         let expirations = Arc::new(RwLock::new(HashMap::new()));
         let cache = Self { data, expirations };
 
-        // Spawns a thread that runs every sec to check expirations hashmap object to control if there are any expired key-val pairs.
         let data_clone = cache.data.clone();
         let expirations_clone = cache.expirations.clone();
         thread::spawn(move || loop {
-            let mut data = data_clone.write().unwrap();
-            let expirations = expirations_clone.read().unwrap();
             let now = Instant::now();
-            for (key, &time) in expirations.iter() {
-                if time <= now {
-                    data.remove(key);
+            let keys_to_remove: Vec<String> = {
+                let expirations = expirations_clone.read().unwrap();
+                expirations
+                    .iter()
+                    .filter_map(|(key, &time)| if time <= now { Some(key.clone()) } else { None })
+                    .collect()
+            };
+
+            if !keys_to_remove.is_empty() {
+                let mut data = data_clone.write().unwrap();
+                for key in keys_to_remove {
+                    data.remove(&key);
                 }
             }
+
             thread::sleep(Duration::from_secs(1));
         });
+
         cache
     }
 
