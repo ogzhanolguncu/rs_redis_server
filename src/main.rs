@@ -2,9 +2,7 @@ mod connection_manager;
 mod resp;
 mod store;
 
-#[macro_use(concat_string)]
-extern crate concat_string;
-use std::net::{SocketAddrV4, TcpListener};
+use std::net::{SocketAddrV4, TcpListener, Ipv4Addr};
 use std::sync::Arc;
 use std::thread;
 
@@ -12,7 +10,10 @@ use connection_manager::client_handler::handle_stream;
 use resp::deserialize::deserialize;
 use store::db::Cache;
 
-const ADDR: std::net::Ipv4Addr = std::net::Ipv4Addr::new(127, 0, 0, 1);
+#[macro_use(concat_string)]
+extern crate concat_string;
+
+const ADDR: Ipv4Addr = Ipv4Addr::new(127, 0, 0, 1);
 const PORT: u16 = 6379; //Redis PORT
 
 fn main() {

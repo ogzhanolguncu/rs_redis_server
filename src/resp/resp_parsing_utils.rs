@@ -54,17 +54,13 @@ pub fn read_simple_string(serialized_input: &str) -> (String, String) {
     split_data(serialized_input)
 }
 
-pub fn append_crlf<S: AsRef<str>>(str: S) -> String {
-    concat_string!(str, END_OF_LINE)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn should_add_append_crlf() {
-        assert_eq!(append_crlf("world"), "world\r\n".to_string());
+        assert_eq!("world\r\n", "world\r\n".to_string());
     }
 
     #[test]

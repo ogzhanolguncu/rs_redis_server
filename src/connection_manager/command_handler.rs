@@ -9,7 +9,7 @@ use super::{
 };
 use crate::{deserialize, resp::deserialize::RespResponse, store::db::Cache};
 
-pub fn handle_command(human_readable: Cow<'_, str>, cache: &Cache) -> String {
+pub fn handle_command(human_readable: Cow<'_, str>, cache: &Cache) -> Cow<'static, str> {
     let command = deserialize(&human_readable);
 
     match command {

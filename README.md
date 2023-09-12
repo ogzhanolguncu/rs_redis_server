@@ -35,3 +35,22 @@ We've adopted the official RESP to ensure seamless communication in our system.
 We've included a diagram below to offer a clearer perspective on this implementation. This visualization should help elucidate the inner workings and flow of our Redis server replica.
 
 ![Redis Flow](./redis-flow.png)
+
+### Benchmarks
+
+####
+
+This is the rust version of Redis server:
+```bash
+redis-benchmark -t set,get, -n 100000 -q
+WARNING: Could not fetch server CONFIG
+SET: 134408.59 requests per second, p50=0.183 msec
+GET: 113636.37 requests per second, p50=0.247 msec
+```
+
+Actual Redis:
+```bash
+redis-benchmark -t set,get, -n 100000 -q
+SET: 168634.06 requests per second, p50=0.159 msec
+GET: 180180.17 requests per second, p50=0.151 msec
+```
