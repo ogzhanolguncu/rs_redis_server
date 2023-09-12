@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+#[allow(dead_code)]
 #[derive(PartialEq)]
 pub enum InputVariants {
     NumberVariant(i32),
