@@ -43,7 +43,6 @@ We've included a diagram below to offer a clearer perspective on this implementa
 This is the rust version of Redis server:
 ```bash
 redis-benchmark -t set,get, -n 100000 -q
-WARNING: Could not fetch server CONFIG
 SET: 133155.80 requests per second, p50=0.191 msec
 GET: 130890.05 requests per second, p50=0.183 msec
 ```
