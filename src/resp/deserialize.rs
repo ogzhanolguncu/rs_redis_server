@@ -16,14 +16,14 @@ pub fn deserialize(serialized_input: &str) -> Result<RespResponse, ErrMessages> 
     if serialized_input.is_empty() {
         return Err(ErrMessages::EmptyInput);
     }
-    let (first_char, serialized_input_input) = (
-        serialized_input.chars().next().unwrap_or_default(),
-        &serialized_input[1..],
-    );
+    let (first_char, serialized_input_input) = match serialized_input.chars().next() {
+        Some(ch) => (ch, &serialized_input[1..]),
+        None => return Err(ErrMessages::EmptyInput),
+    };
 
     match first_char {
         '+' | '-' => {
-            let (head, tail) = read_simple_string(serialized_input_input);
+            let (head, tail) = read_simple_string(serialized_input_input)?;
             Ok(RespResponse::TupleVariant(head, tail))
         }
         '$' => read_bulk_string(serialized_input_input)

@@ -9,7 +9,7 @@ use super::{
 };
 use crate::{deserialize, resp::deserialize::RespResponse, store::db::Cache};
 
-pub fn handle_command(human_readable: Cow<'_, str>, cache: &Cache) -> String {
+pub fn handle_command(human_readable: Cow<'_, str>, cache: &Cache) -> Cow<'static, str> {
     let command = deserialize(&human_readable);
 
     match command {
@@ -111,7 +111,7 @@ mod tests {
     fn should_return_get_to_cache() {
         let (key, value) = ("name".to_string(), "Wizard of Oz".to_string());
         let cache = Cache::new();
-        cache.set(key, value);
+        cache.set(key, value).unwrap();
 
         let input = Cow::Borrowed("*2\r\n$3\r\nget\r\n$4\r\nname\r\n");
         assert_eq!(
@@ -163,9 +163,9 @@ mod tests {
     #[test]
     fn should_return_existing_values() {
         let cache = Cache::new();
-        cache.set("name".to_string(), "name_val".to_string());
-        cache.set("name1".to_string(), "name_val_1".to_string());
-        cache.set("name2".to_string(), "name_val_2".to_string());
+        cache.set("name".to_string(), "name_val".to_string()).unwrap();
+        cache.set("name1".to_string(), "name_val_1".to_string()).unwrap();
+        cache.set("name2".to_string(), "name_val_2".to_string()).unwrap();
         let input =
             Cow::Borrowed("*4\r\n$6\r\nexists\r\n$4\r\nname\r\n$5\r\nname1\r\n$5\r\nname2\r\n");
         assert_eq!(
@@ -187,9 +187,9 @@ mod tests {
     #[test]
     fn should_del_values() {
         let cache = Cache::new();
-        cache.set("name".to_string(), "name_val".to_string());
-        cache.set("name1".to_string(), "name_val_1".to_string());
-        cache.set("name2".to_string(), "name_val_2".to_string());
+        cache.set("name".to_string(), "name_val".to_string()).unwrap();
+        cache.set("name1".to_string(), "name_val_1".to_string()).unwrap();
+        cache.set("name2".to_string(), "name_val_2".to_string()).unwrap();
         let input =
             Cow::Borrowed("*4\r\n$3\r\ndel\r\n$4\r\nname\r\n$5\r\nname1\r\n$5\r\nname2\r\n");
         assert_eq!(
@@ -221,7 +221,7 @@ mod tests {
     #[test]
     fn should_create_incr_if_exists() {
         let cache = Cache::new();
-        cache.set("mykey".to_string(), 11.to_string());
+        cache.set("mykey".to_string(), 11.to_string()).unwrap();
         let input = Cow::Borrowed("*2\r\n$4\r\nincr\r\n$5\r\nmykey\r\n");
         assert_eq!(
             serialize(InputVariants::NumberVariant(12)),
@@ -242,7 +242,7 @@ mod tests {
     #[test]
     fn should_create_decr_if_exists() {
         let cache = Cache::new();
-        cache.set("mykey".to_string(), 11.to_string());
+        cache.set("mykey".to_string(), 11.to_string()).unwrap();
         let input = Cow::Borrowed("*2\r\n$4\r\ndecr\r\n$5\r\nmykey\r\n");
         assert_eq!(
             serialize(InputVariants::NumberVariant(10)),
