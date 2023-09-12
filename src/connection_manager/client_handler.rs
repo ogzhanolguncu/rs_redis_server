@@ -8,43 +8,41 @@ use crate::store::db::Cache;
 use super::command_handler::handle_command;
 
 pub fn handle_stream(mut stream: TcpStream, cache: &Cache) {
-    let mut data = [0_u8; 60];
+    let mut data = [0_u8; 128];
     loop {
         match stream.read(&mut data) {
             Ok(size) => {
                 if size == 0 {
-                    println!("Connection closed by {}", stream.peer_addr().unwrap());
+                    match stream.peer_addr() {
+                        Ok(addr) => println!("Connection closed by {}", addr),
+                        Err(_) => println!("Connection closed but could not get peer address."),
+                    }
                     break;
                 } else {
-                    let human_readable = String::from_utf8_lossy(&data[0..size]);
+                    let human_readable = String::from_utf8_lossy(&data);
                     let serialized_response = handle_command(human_readable, cache);
-                    match stream.write(serialized_response.as_bytes()) {
-                        Ok(written) => {
-                            if written < serialized_response.len() {
-                                println!(
-                                    "Warning: Not all bytes written to {}: only {}/{} bytes written",
-                                    stream.peer_addr().unwrap(),
-                                    written,
-                                    serialized_response.len()
-                                );
-                            }
-                        }
+                    match stream.write_all(serialized_response.as_bytes()) {
+                        Ok(_) => {}
                         Err(err) => {
-                            println!(
-                                "An error occurred while writing to {}: {}",
-                                stream.peer_addr().unwrap(),
-                                err
-                            );
+                            match stream.peer_addr() {
+                                Ok(addr) => println!("An error occurred while writing to {}: {}", addr, err),
+                                Err(_) => println!("An error occurred while writing and could not get peer address: {}", err),
+                            }
                         }
                     }
                 }
             }
-            Err(_) => {
-                println!(
-                    "An error occurred, terminating connection with {}",
-                    stream.peer_addr().unwrap()
-                );
-                stream.shutdown(Shutdown::Both).unwrap();
+            Err(err) => {
+                match stream.peer_addr() {
+                    Ok(addr) => println!(
+                        "An error occurred, terminating connection with {}: {}",
+                        addr, err
+                    ),
+                    Err(_) => println!("An error occurred and could not get peer address: {}", err),
+                }
+                if let Err(err) = stream.shutdown(Shutdown::Both) {
+                    println!("An error occurred while shutting down the stream: {}", err);
+                }
                 break;
             }
         }
