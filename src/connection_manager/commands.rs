@@ -27,7 +27,7 @@ pub fn ignore_command() -> Cow<'static, str> {
 
 pub fn handle_get(args: &[String], cache: &Cache) -> Cow<'static, str> {
     if let Some(key) = args.get(0) {
-        if let Some(response) = cache.get(key) {
+        if let Ok(Some(response)) = cache.get(key) {
             serialize(InputVariants::StringVariant(response))
         } else {
             serialize(InputVariants::StringVariant("+(nil)".to_string()))
@@ -79,8 +79,10 @@ pub fn handle_set(args: &[String], cache: &Cache) -> Cow<'static, str> {
 
 fn handle_set_without_expiration(args: &[String], cache: &Cache) -> Cow<'static, str> {
     if let (Some(key), Some(value)) = (args.get(0), args.get(1)) {
-        cache.set(key.clone(), value.clone());
-        serialize(InputVariants::StringVariant("+OK".to_string()))
+        match cache.set(key.clone(), value.clone()) {
+            Ok(_) => serialize(InputVariants::StringVariant("+OK".to_string())),
+            Err(err) => serialize_error(concat_string!("-", err).as_str()),
+        }
     } else {
         serialize_error("-invalid SET arguments")
     }
@@ -88,15 +90,20 @@ fn handle_set_without_expiration(args: &[String], cache: &Cache) -> Cow<'static,
 
 fn handle_set_with_expiration(args: &[String], cache: &Cache, time: Duration) -> Cow<'static, str> {
     if let (Some(key), Some(value)) = (args.get(0), args.get(1)) {
-        cache.set_with_expiration(key.clone(), value.clone(), time);
-        serialize(InputVariants::StringVariant("+OK".to_string()))
+        match cache.set_with_expiration(key.clone(), value.clone(), time) {
+            Ok(_) => serialize(InputVariants::StringVariant("+OK".to_string())),
+            Err(err) => serialize_error(concat_string!("-", err).as_str()),
+        }
     } else {
         serialize_error("-invalid SET arguments")
     }
 }
 
 pub fn handle_exists(args: &[String], cache: &Cache) -> Cow<'static, str> {
-    let count = args.iter().filter(|key| cache.exists(key)).count();
+    let count = args
+        .iter()
+        .filter(|key| cache.exists(key).unwrap_or(false))
+        .count();
     match i32::try_from(count) {
         Ok(count_i32) => serialize(InputVariants::NumberVariant(count_i32)),
         Err(_) => serialize_error("-something went wrong during exists"),
@@ -104,7 +111,16 @@ pub fn handle_exists(args: &[String], cache: &Cache) -> Cow<'static, str> {
 }
 
 pub fn handle_del(args: &[String], cache: &Cache) -> Cow<'static, str> {
-    let count = args.iter().filter(|key| cache.del(key).is_some()).count();
+    let count = args
+        .iter()
+        .filter(|&key| {
+            match cache.del(key) {
+                Ok(Some(_)) => true, // Successfully deleted
+                Ok(None) => false,   // Key didn't exist, but operation succeeded
+                Err(_) => false,     // Deletion failed
+            }
+        })
+        .count();
     match i32::try_from(count) {
         Ok(count_i32) => serialize(InputVariants::NumberVariant(count_i32)),
         Err(_) => serialize_error("-something went wrong during del"),
@@ -115,17 +131,19 @@ pub fn handle_incr(args: &[String], cache: &Cache) -> Cow<'static, str> {
     if let Some(key) = args.get(0) {
         let existing_value = cache.get(key);
 
-        if let Some(value_in_cache) = existing_value {
+        if let Ok(Some(value_in_cache)) = existing_value {
             match value_in_cache.parse::<i32>().map(|v| v + 1) {
-                Ok(new_value) => {
-                    cache.set(key.clone(), new_value.to_string());
-                    serialize(InputVariants::NumberVariant(new_value))
-                }
+                Ok(new_value) => match cache.set(key.clone(), new_value.to_string()) {
+                    Ok(_) => serialize(InputVariants::NumberVariant(new_value)),
+                    Err(err) => serialize_error(concat_string!("-", err).as_str()),
+                },
                 Err(_) => serialize_error("-could not parse stored number"),
             }
         } else {
-            cache.set(key.clone(), 1.to_string());
-            serialize(InputVariants::NumberVariant(1))
+            match cache.set(key.clone(), 1.to_string()) {
+                Ok(_) => serialize(InputVariants::NumberVariant(1)),
+                Err(err) => serialize_error(concat_string!("-", err).as_str()),
+            }
         }
     } else {
         serialize_error("-invalid INCR arguments")
@@ -136,17 +154,19 @@ pub fn handle_decr(args: &[String], cache: &Cache) -> Cow<'static, str> {
     if let Some(key) = args.get(0) {
         let existing_value = cache.get(key);
 
-        if let Some(value_in_cache) = existing_value {
+        if let Ok(Some(value_in_cache)) = existing_value {
             match value_in_cache.parse::<i32>().map(|v| v - 1) {
-                Ok(new_value) => {
-                    cache.set(key.clone(), new_value.to_string());
-                    serialize(InputVariants::NumberVariant(new_value))
-                }
+                Ok(new_value) => match cache.set(key.clone(), new_value.to_string()) {
+                    Ok(_) => serialize(InputVariants::NumberVariant(new_value)),
+                    Err(err) => serialize_error(concat_string!("-", err).as_str()),
+                },
                 Err(_) => serialize_error("-could not parse stored number"),
             }
         } else {
-            cache.set(key.clone(), (-1).to_string());
-            serialize(InputVariants::NumberVariant(-1))
+            match cache.set(key.clone(), (-1).to_string()) {
+                Ok(_) => serialize(InputVariants::NumberVariant(-1)),
+                Err(err) => serialize_error(concat_string!("-", err).as_str()),
+            }
         }
     } else {
         serialize_error("-invalid INCR arguments")

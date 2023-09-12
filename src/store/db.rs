@@ -40,31 +40,54 @@ impl Cache {
         cache
     }
 
-    pub fn set_with_expiration(&self, key: String, value: String, secs: Duration) {
-        let mut data = self.data.write().unwrap();
-        let mut expirations = self.expirations.write().unwrap();
-        data.insert(key.clone(), value);
-        expirations.insert(key, Instant::now() + secs);
+    pub fn set_with_expiration(
+        &self,
+        key: String,
+        value: String,
+        secs: Duration,
+    ) -> Result<(), &'static str> {
+        if let Ok(mut data) = self.data.write() {
+            if let Ok(mut expirations) = self.expirations.write() {
+                data.insert(key.clone(), value);
+                expirations.insert(key, Instant::now() + secs);
+                Ok(())
+            } else {
+                Err("Could not acquire expirations write lock")
+            }
+        } else {
+            Err("Could not acquire data write lock")
+        }
     }
 
-    pub fn set(&self, key: String, value: String) {
-        let mut data = self.data.write().unwrap();
-        data.insert(key, value);
+    pub fn set(&self, key: String, value: String) -> Result<(), &'static str> {
+        if let Ok(mut data) = self.data.write() {
+            data.insert(key, value);
+            Ok(())
+        } else {
+            Err("Could not acquire data write lock")
+        }
     }
 
-    pub fn get(&self, key: &str) -> Option<String> {
-        let data = self.data.read().unwrap();
-        data.get(key).cloned()
+    pub fn get(&self, key: &str) -> Result<Option<String>, &'static str> {
+        match self.data.read() {
+            Ok(data) => Ok(data.get(key).cloned()),
+            Err(_) => Err("Could not acquire data read lock"),
+        }
     }
 
-    pub fn exists(&self, key: &str) -> bool {
-        let data = self.data.read().unwrap();
-        data.contains_key(key)
+    pub fn exists(&self, key: &str) -> Result<bool, &'static str> {
+        match self.data.read() {
+            Ok(data) => Ok(data.contains_key(key)),
+            Err(_) => Err("Could not acquire data read lock"),
+        }
     }
 
-    pub fn del(&self, key: &str) -> Option<String> {
-        let mut data = self.data.write().unwrap();
-        data.remove(key)
+    pub fn del(&self, key: &str) -> Result<Option<String>, &'static str> {
+        if let Ok(mut data) = self.data.write() {
+            Ok(data.remove(key))
+        } else {
+            Err("Could not acquire data write lock")
+        }
     }
 }
 
@@ -75,8 +98,8 @@ mod tests {
     #[test]
     fn should_initialize_and_get_set() {
         let cache = Cache::new();
-        cache.set(String::from("name"), String::from("The Wizard of Oz"));
-        assert_eq!("The Wizard of Oz", cache.get("name").unwrap());
+        cache.set(String::from("name"), String::from("The Wizard of Oz")).unwrap();
+        assert_eq!("The Wizard of Oz", cache.get("name").unwrap().unwrap());
     }
 
     #[test]
@@ -86,8 +109,8 @@ mod tests {
             String::from("name"),
             String::from("The Wizard of Oz"),
             Duration::from_secs(3),
-        );
+        ).unwrap();
         thread::sleep(Duration::from_secs(4));
-        assert!(cache.get("name").is_none());
+        assert!(cache.get("name").unwrap().is_none());
     }
 }
