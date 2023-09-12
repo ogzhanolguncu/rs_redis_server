@@ -163,9 +163,15 @@ mod tests {
     #[test]
     fn should_return_existing_values() {
         let cache = Cache::new();
-        cache.set("name".to_string(), "name_val".to_string()).unwrap();
-        cache.set("name1".to_string(), "name_val_1".to_string()).unwrap();
-        cache.set("name2".to_string(), "name_val_2".to_string()).unwrap();
+        cache
+            .set("name".to_string(), "name_val".to_string())
+            .unwrap();
+        cache
+            .set("name1".to_string(), "name_val_1".to_string())
+            .unwrap();
+        cache
+            .set("name2".to_string(), "name_val_2".to_string())
+            .unwrap();
         let input =
             Cow::Borrowed("*4\r\n$6\r\nexists\r\n$4\r\nname\r\n$5\r\nname1\r\n$5\r\nname2\r\n");
         assert_eq!(
@@ -187,9 +193,15 @@ mod tests {
     #[test]
     fn should_del_values() {
         let cache = Cache::new();
-        cache.set("name".to_string(), "name_val".to_string()).unwrap();
-        cache.set("name1".to_string(), "name_val_1".to_string()).unwrap();
-        cache.set("name2".to_string(), "name_val_2".to_string()).unwrap();
+        cache
+            .set("name".to_string(), "name_val".to_string())
+            .unwrap();
+        cache
+            .set("name1".to_string(), "name_val_1".to_string())
+            .unwrap();
+        cache
+            .set("name2".to_string(), "name_val_2".to_string())
+            .unwrap();
         let input =
             Cow::Borrowed("*4\r\n$3\r\ndel\r\n$4\r\nname\r\n$5\r\nname1\r\n$5\r\nname2\r\n");
         assert_eq!(

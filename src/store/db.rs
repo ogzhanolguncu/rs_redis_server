@@ -98,18 +98,22 @@ mod tests {
     #[test]
     fn should_initialize_and_get_set() {
         let cache = Cache::new();
-        cache.set(String::from("name"), String::from("The Wizard of Oz")).unwrap();
+        cache
+            .set(String::from("name"), String::from("The Wizard of Oz"))
+            .unwrap();
         assert_eq!("The Wizard of Oz", cache.get("name").unwrap().unwrap());
     }
 
     #[test]
     fn should_set_and_get_expiration() {
         let cache = Cache::new();
-        cache.set_with_expiration(
-            String::from("name"),
-            String::from("The Wizard of Oz"),
-            Duration::from_secs(3),
-        ).unwrap();
+        cache
+            .set_with_expiration(
+                String::from("name"),
+                String::from("The Wizard of Oz"),
+                Duration::from_secs(3),
+            )
+            .unwrap();
         thread::sleep(Duration::from_secs(4));
         assert!(cache.get("name").unwrap().is_none());
     }
