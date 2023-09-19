@@ -1,4 +1,4 @@
-# Redis Server Implementation in NodeJS and TypeScript
+# Redis Server Implementation in Rust
 
 This project offers a streamlined implementation of a Redis server. Built with the power of Rust. Originally port of : [Valinor Vault](https://github.com/ogzhanolguncu/valinor-vault/)
 
